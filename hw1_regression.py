@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader, Dataset, random_split
 from torch.utils.tensorboard import SummaryWriter
 
 from tqdm import tqdm
+import csv
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # TODO: read data  
@@ -46,9 +47,10 @@ class COVID19Dataset(Dataset):
         # for testing
         else:
             self.data = torch.FloatTensor(data)
+            self.label = label
 
     def __getitem__(self, index):
-        if label is not None:
+        if self.label is not None:
             return self.data[index], self.label[index]
         else:
             return self.data[index]
@@ -160,5 +162,28 @@ def train(model, train_loader, valid_loader, num_epoches=3000, lr = 1e-5):
             return
         
 # TODO: start training\
+# model = Classifier(input_dim=data.shape[1]).to(device)
+# train(model, train_loader, valid_loader) 
+
+def save_pred(preds, file):
+    with open(file, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(['id', 'value'])
+        for i, pred in enumerate(preds):
+            writer.writerow([i, pred])
+
 model = Classifier(input_dim=data.shape[1]).to(device)
-train(model, train_loader, valid_loader)
+model.load_state_dict(torch.load('model\hw1\\best_model.pt'))
+def predict(test_loader, model, device):
+    model.eval() # Set your model to evaluation mode.
+    preds = []
+    for x in tqdm(test_loader):
+        x = x.to(device)                        
+        with torch.no_grad():                   
+            pred = model(x)                     
+            preds.append(pred.detach().cpu())   
+    preds = torch.cat(preds, dim=0).numpy()  
+    return preds
+
+preds = predict(test_loader, model, device)
+save_pred(preds, 'submission.csv')
