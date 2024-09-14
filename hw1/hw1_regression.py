@@ -186,4 +186,4 @@ def predict(test_loader, model, device):
     return preds
 
 preds = predict(test_loader, model, device)
-save_pred(preds, 'submission.csv')
+save_pred(preds, 'hw1/submission_new.csv')
